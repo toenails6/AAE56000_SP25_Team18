@@ -12,6 +12,3 @@ classdef fireClass < handle
         Intensity; 
     end
 end
-
-%test
-
