@@ -9,20 +9,45 @@ classdef gridClass < handle
     properties
         gridSize = [128, 256]; 
         riskFactor; 
+        riskFactor_0; 
+        riskFactorAmplitudes; 
+
+        % The desired number of ticks to be in a year.
+        % Used to tune oscillation frequencies. 
+        ticksPerYear; 
     end
     methods
         % Class constructor. 
-        function obj = gridClass(gridSize1, gridSize2)
+        function obj = gridClass(gridSize1, gridSize2, ticksPerYear)
             obj.gridSize = [gridSize1, gridSize2]; 
+            obj.ticksPerYear = ticksPerYear; 
 
-            % Generate risk factor matrix, seeded gaussian RNG. 
-            % risk factor ranges from minimum of 0 to maximum of 1. 
-            obj.riskFactor = zeros(obj.gridSize(1), obj.gridSize(2)); 
+            % Generate initial risk factor matrix via seeded gaussian RNG. 
+            % Risk factor ranges from minimum of 0 to maximum of 1. 
+            obj.riskFactor_0 = zeros(obj.gridSize(1), obj.gridSize(2)); 
             rng(117); 
-            obj.riskFactor = min(max( ...
+            obj.riskFactor_0 = min(max( ...
                 normrnd(-0.5, 0.4, obj.gridSize(1), obj.gridSize(2)), ...
                 0), 1); 
             rng("default"); 
+
+            % Generate risk factor oscillation amplitudes. 
+            obj.riskFactorAmplitudes = zeros( ...
+                obj.gridSize(1), obj.gridSize(2)); 
+            rng(54); 
+            obj.riskFactorAmplitudes = min(max( ...
+                normrnd(0.2, 0.1, obj.gridSize(1), obj.gridSize(2)), ...
+                0), 1); 
+            rng("default"); 
+        end
+
+        % Update risk factor, simulating periodic seasonal changes. 
+        % Limit risk factors to minimum of 0 to maximum of 1. 
+        function obj  = updateRiskFactor(obj, tick)
+            obj.riskFactor = obj.riskFactor_0 + ...
+                obj.riskFactorAmplitudes*sin(tick * ...
+                2*pi/obj.ticksPerYear); 
+            obj.riskFactor = min(max(obj.riskFactor, 0), 1); 
         end
     end
 end
