@@ -11,6 +11,7 @@ classdef gridClass < handle
         riskFactor; 
         riskFactor_0; 
         riskFactorAmplitudes; 
+        gridHealth; 
 
         % The desired number of ticks to be in a year.
         % Used to tune oscillation frequencies. 
@@ -21,6 +22,9 @@ classdef gridClass < handle
         function obj = gridClass(gridSize1, gridSize2, ticksPerYear)
             obj.gridSize = [gridSize1, gridSize2]; 
             obj.ticksPerYear = ticksPerYear; 
+
+            % Initialize grid health. 
+            obj.gridHealth = ones(obj.gridSize(1), obj.gridSize(2)); 
 
             % Generate initial risk factor matrix via seeded gaussian RNG. 
             % Risk factor ranges from minimum of 0 to maximum of 1. 
