@@ -9,6 +9,47 @@
 % certain threshold based on local risk factor. 
 classdef fireClass < handle
     properties
-        Intensity; 
+        gridSize; 
+        intensity; 
+        newFireIntensityMean; 
+        newFireIntensityStandardDeviation; 
+    end
+    methods
+        % Class constructor. 
+        function obj = fireClass( ...
+                gridSize, ...
+                newFireIntensityMean, ...
+                newFireIntensityStandardDeviation)
+            % Initializations. 
+            obj.gridSize = gridSize; 
+            obj.intensity = zeros(obj.gridSize(1), obj.gridSize(2)); 
+            obj.newFireIntensityMean = newFireIntensityMean; 
+            obj.newFireIntensityStandardDeviation = ...
+                newFireIntensityStandardDeviation; 
+        end
+
+        % New fire generation method. 
+        function obj = generateFires(obj, riskFactor)
+            % Generate new fires based on stochastic risk factor. 
+            % Also check whether a fire already exists. 
+            
+            % Grid locations to generate new fires, based on risk factor
+            % probability, and whether a fire already exists. 
+            newFireOccurrence = ...
+                ( ...
+                rand(obj.gridSize(1), obj.gridSize(2)) < ...
+                riskFactor) & ...
+                (~obj.intensity); 
+
+            % Stochastically generated intensities of new fires. 
+            stochasticNewFireIntensities = normrnd( ...
+                obj.newFireIntensityMean, ...
+                obj.newFireIntensityStandardDeviation, ...
+                obj.gridSize(1), obj.gridSize(2)); 
+
+            % Generate new fires. 
+            obj.intensity(newFireOccurrence) = ...
+                stochasticNewFireIntensities(newFireOccurrence); 
+        end
     end
 end
