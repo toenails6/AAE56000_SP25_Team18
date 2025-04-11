@@ -60,7 +60,11 @@ x(k+1) = \begin{bmatrix}
 # Fire Occurrence
 Stochastic fire generation is based on comparison between a uniform RNG and the risk factor of the corresponding grid block. 
 If the output from the uniform RNG is within the risk factor of the corresponding grid, then a fire will be generated. 
-The intensity of the new fire will be normally stochastic, with arbitrary mean and standard deviation
+The intensity of the new fire will be normally stochastic, with arbitrary mean and standard deviation. 
+
+# Grid Health regeneration. 
+Grid health will be replenished at a fixed rate when there is no fire present in the corresponding grid block. 
+A cost corresponds to each regen, and scales to small regen steps when the health is almost fully restored. 
 
 
 

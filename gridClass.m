@@ -5,23 +5,29 @@
 % to mimic seasonal influence. 
 % There will be a seeded RNG generated amplitude for each grid block. 
 % There can be also be manual tuning of these parameters. 
-classdef gridClass < handle
+classdef gridClass < gridSettingsClass
     properties
-        gridSize = [128, 256]; 
         riskFactor; 
         riskFactor_0; 
         riskFactorAmplitudes; 
+        fires fireClass; 
         gridHealth; 
-
-        % The desired number of ticks to be in a year.
-        % Used to tune oscillation frequencies. 
-        ticksPerYear; 
     end
     methods
         % Class constructor. 
-        function obj = gridClass(gridSize1, gridSize2, ticksPerYear)
-            obj.gridSize = [gridSize1, gridSize2]; 
-            obj.ticksPerYear = ticksPerYear; 
+        function obj = gridClass(gridSettings)
+            % Restrict input type for coding convenience. 
+            arguments
+                gridSettings gridSettingsClass; 
+            end
+
+            % Initialize grid and sim properties. 
+            obj.gridSize = gridSettings.gridSize; 
+            obj.ticksPerYear = gridSettings.ticksPerYear; 
+            obj.restoreGridHealthRate = ...
+                gridSettings.restoreGridHealthRate; 
+            obj.restoreGridHealthCost = ...
+                gridSettings.restoreGridHealthCost; 
 
             % Initialize grid health. 
             obj.gridHealth = ones(obj.gridSize(1), obj.gridSize(2)); 
@@ -43,6 +49,12 @@ classdef gridClass < handle
                 normrnd(0.2, 0.1, obj.gridSize(1), obj.gridSize(2)), ...
                 0), 1); 
             rng("default"); 
+
+            % Instantiate fire class. 
+            obj.fires = fireClass( ...
+                obj.gridSize, ...
+                obj.newFireIntensityMean, ...
+                obj.newFireIntensityStandardDeviation); 
         end
 
         % Update risk factor, simulating periodic seasonal changes. 
@@ -52,6 +64,26 @@ classdef gridClass < handle
                 obj.riskFactorAmplitudes*sin(tick * ...
                 2*pi/obj.ticksPerYear); 
             obj.riskFactor = min(max(obj.riskFactor, 0), 1); 
+        end
+
+        % Restore grid block health. 
+        function obj = restoreGridHealth(obj)
+            % Check the grid for existence of fires. 
+            noFireGrids = ~obj.fires.intensity; 
+
+            % Calculate amount of health to restore. 
+            % Considers grid blocks close to full health. 
+            restoreAmount = ...
+                min(1 - obj.gridHealth, obj.restoreGridHealthRate); 
+            restoreAmount(~noFireGrids) = 0; 
+            
+            % Restore grid blocks without fire. 
+            obj.gridHealth = obj.gridHealth + restoreAmount; 
+
+            % Calculate restoration costs. 
+            costs = sum( ...
+                restoreAmount/obj.restoreGridHealthRate * ...
+                obj.restoreGridHealthCost, "all"); 
         end
     end
 end

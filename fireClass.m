@@ -20,9 +20,10 @@ classdef fireClass < handle
                 gridSize, ...
                 newFireIntensityMean, ...
                 newFireIntensityStandardDeviation)
+            
             % Initializations. 
             obj.gridSize = gridSize; 
-            obj.intensity = zeros(obj.gridSize(1), obj.gridSize(2)); 
+            obj.intensity = zeros(obj.gridSize); 
             obj.newFireIntensityMean = newFireIntensityMean; 
             obj.newFireIntensityStandardDeviation = ...
                 newFireIntensityStandardDeviation; 
