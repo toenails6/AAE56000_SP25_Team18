@@ -14,6 +14,7 @@ classdef gridSettingsClass < handle
         % Cost corresponding to grid health regeneration rate. 
         restoreGridHealthCost; 
         
+        newFireIntensityMax; 
         newFireIntensityMean; 
         newFireIntensityStandardDeviation; 
 
