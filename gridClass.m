@@ -51,10 +51,7 @@ classdef gridClass < gridSettingsClass
             rng("default"); 
 
             % Instantiate fire class. 
-            obj.fires = fireClass( ...
-                obj.gridSize, ...
-                obj.newFireIntensityMean, ...
-                obj.newFireIntensityStandardDeviation); 
+            obj.fires = fireClass(gridSettings); 
         end
 
         % Update risk factor, simulating periodic seasonal changes. 

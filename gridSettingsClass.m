@@ -16,5 +16,9 @@ classdef gridSettingsClass < handle
         
         newFireIntensityMean; 
         newFireIntensityStandardDeviation; 
+
+        fireIntensityScaler; 
+        peakIntensityHealth_mean; 
+        peakIntensityHealth_standardDeviation; 
     end
 end
