@@ -16,17 +16,18 @@ classdef fireClass < handle
     end
     methods
         % Class constructor. 
-        function obj = fireClass( ...
-                gridSize, ...
-                newFireIntensityMean, ...
-                newFireIntensityStandardDeviation)
-            
+        function obj = fireClass(gridSettings)
+            % Restrict input type for coding convenience. 
+            arguments
+                gridSettings gridSettingsClass; 
+            end
+
             % Initializations. 
-            obj.gridSize = gridSize; 
+            obj.gridSize = gridSettings.gridSize; 
             obj.intensity = zeros(obj.gridSize); 
-            obj.newFireIntensityMean = newFireIntensityMean; 
+            obj.newFireIntensityMean = gridSettings.newFireIntensityMean; 
             obj.newFireIntensityStandardDeviation = ...
-                newFireIntensityStandardDeviation; 
+                gridSettings.newFireIntensityStandardDeviation; 
         end
 
         % New fire generation method. 
@@ -51,6 +52,14 @@ classdef fireClass < handle
             % Generate new fires. 
             obj.intensity(newFireOccurrence) = ...
                 stochasticNewFireIntensities(newFireOccurrence); 
+        end
+
+        % Update intensity method. 
+        function obj = updateIntensity(obj, gridHandle)
+            % Discrete time state space. 
+            x = [obj.intensity; gridHandle.gridHealth]; 
+            % x = [ ...
+            %     1+] * x; 
         end
     end
 end
