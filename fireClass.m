@@ -13,6 +13,9 @@ classdef fireClass < handle
         intensity; 
         newFireIntensityMean; 
         newFireIntensityStandardDeviation; 
+        peakIntensityHealth_mean; 
+        peakIntensityHealth_standardDeviation; 
+        peakIntensityHealth; 
     end
     methods
         % Class constructor. 
@@ -26,8 +29,24 @@ classdef fireClass < handle
             obj.gridSize = gridSettings.gridSize; 
             obj.intensity = zeros(obj.gridSize); 
             obj.newFireIntensityMean = gridSettings.newFireIntensityMean; 
+
             obj.newFireIntensityStandardDeviation = ...
                 gridSettings.newFireIntensityStandardDeviation; 
+
+            obj.peakIntensityHealth_mean = ...
+                gridSettings.peakIntensityHealth_mean; 
+            
+            obj.peakIntensityHealth_standardDeviation = ...
+                gridSettings.peakIntensityHealth_standardDeviation; 
+
+            % Generate health at which fire intensity growth rate peaks for
+            % the grid. 
+            rng(117); 
+            obj.peakIntensityHealth = min(max(normrnd( ...
+                obj.peakIntensityHealth_mean, ...
+                obj.peakIntensityHealth_standardDeviation, ...
+                obj.gridSize), 0.5), 0.7); 
+            rng("default"); 
         end
 
         % New fire generation method. 
@@ -44,10 +63,10 @@ classdef fireClass < handle
                 (~obj.intensity); 
 
             % Stochastically generated intensities of new fires. 
-            stochasticNewFireIntensities = normrnd( ...
+            stochasticNewFireIntensities = min(max(normrnd( ...
                 obj.newFireIntensityMean, ...
                 obj.newFireIntensityStandardDeviation, ...
-                obj.gridSize(1), obj.gridSize(2)); 
+                obj.gridSize(1), obj.gridSize(2)), 0),1E-1); 
 
             % Generate new fires. 
             obj.intensity(newFireOccurrence) = ...
