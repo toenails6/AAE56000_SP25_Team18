@@ -1,17 +1,16 @@
-% This class contains information on the grid blocks, such as risk factor
-% of getting fires due to geological conditions, etc. 
-% There would be an initial risk factor generated from a seeded RNG. 
-% The risk factor would then oscillate periodically through a sine function
-% to mimic seasonal influence. 
-% There will be a seeded RNG generated amplitude for each grid block. 
-% There can be also be manual tuning of these parameters. 
+% This is the overarching simulation grid class. 
+% This class inherits from the grid settings class, and copies settings
+% upon instantiation. 
 classdef gridClass < gridSettingsClass
     properties
+        tick = 1; 
         riskFactor; 
         riskFactor_0; 
         riskFactorAmplitudes; 
-        fires fireClass; 
         gridHealth; 
+
+        % Subclasses: 
+        fires fireClass; 
     end
     methods
         % Class constructor. 
@@ -21,16 +20,15 @@ classdef gridClass < gridSettingsClass
                 gridSettings gridSettingsClass; 
             end
 
-            % Initialize grid and sim properties. 
-            obj.gridSize = gridSettings.gridSize; 
-            obj.ticksPerYear = gridSettings.ticksPerYear; 
-            obj.restoreGridHealthRate = ...
-                gridSettings.restoreGridHealthRate; 
-            obj.restoreGridHealthCost = ...
-                gridSettings.restoreGridHealthCost; 
+            % Copy sim and grid settings. 
+            gridSettingsProperties = properties(gridSettings); 
+            for i = 1: length(gridSettingsProperties)
+                obj.(gridSettingsProperties{i}) = ...
+                    gridSettings.(gridSettingsProperties{i}); 
+            end
 
             % Initialize grid health. 
-            obj.gridHealth = ones(obj.gridSize(1), obj.gridSize(2)); 
+            obj.gridHealth = ones(obj.gridSize); 
 
             % Generate initial risk factor matrix via seeded gaussian RNG. 
             % Risk factor ranges from minimum of 0 to maximum of 1. 
@@ -50,22 +48,22 @@ classdef gridClass < gridSettingsClass
                 0), 1); 
             rng("default"); 
 
-            % Instantiate fire class. 
-            obj.fires = fireClass(gridSettings); 
+            % Instantiate fire simulations class. 
+            obj.fires = fireClass(obj); 
         end
 
-        % Update risk factor, simulating periodic seasonal changes. 
-        % Limit risk factors to minimum of 0 to maximum of 1. 
-        function obj  = updateRiskFactor(obj, tick)
+        % Update risk factor method, simulating periodic seasonal changes. 
+        % Risk factors constrained to minimum of 0 and maximum of 1. 
+        function obj  = updateRiskFactor(obj)
             obj.riskFactor = obj.riskFactor_0 + ...
-                obj.riskFactorAmplitudes*sin(tick * ...
+                obj.riskFactorAmplitudes*sin(obj.tick * ...
                 2*pi/obj.ticksPerYear); 
             obj.riskFactor = min(max(obj.riskFactor, 0), 1); 
         end
 
-        % Restore grid block health. 
+        % Restore grid block health method. 
         function obj = restoreGridHealth(obj)
-            % Check the grid for existence of fires. 
+            % Locate grid blocks without fire. 
             noFireGrids = ~obj.fires.intensity; 
 
             % Calculate amount of health to restore. 
@@ -81,6 +79,23 @@ classdef gridClass < gridSettingsClass
             costs = sum( ...
                 restoreAmount/obj.restoreGridHealthRate * ...
                 obj.restoreGridHealthCost, "all"); 
+        end
+
+        % Update tick method. 
+        function obj = updateTick(obj)
+            % obj.tick = mod(obj.tick+1, obj.ticksPerYear); 
+            obj.tick = obj.tick + 1; 
+        end
+
+        % Simulation grid update method. 
+        function obj = updateGrid(obj)
+            obj.updateRiskFactor(); 
+            obj.restoreGridHealth(); 
+            obj.fires.generateFires(); 
+            obj.fires.updateIntensity(); 
+
+            % Update tick at the end of the grid update method. 
+            obj.updateTick(); 
         end
     end
 end

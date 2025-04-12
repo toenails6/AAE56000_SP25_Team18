@@ -3,7 +3,14 @@ AAE56800_SP25_Team18
 
 MATLAB to the rescue. 
 
-# Fire growth. 
+# Risk factor 
+There would be an initial risk factor generated from a seeded RNG. 
+The risk factor would then oscillate periodically through a sine function
+to mimic seasonal influence. 
+There will be a seeded RNG generated amplitude for each grid block. 
+Results can be tuned through mean and standard deviation of the corresponding normally stochastic RNG. 
+
+# Fire intensity growth
 Fire dynamics in terms of fire intensity $I$: 
 ```math
 I(k+1) = c \cdot R \cdot f\left(H(k)\right) \cdot I(k)
@@ -57,12 +64,21 @@ x(k+1) = \begin{bmatrix}
 \end{bmatrix}
 ```
 
+Fire intensities are constrained to minimum of 0 and maximum of 1. 
+Grid blocks with fire intensity of 0 means have no active presence of fires. 
+A fire intensity of 1 effectively instantly depletes the health a grid block. 
+
+# Fire Spread
+Fires can spread based on intensity and neighbouring risk factors, which means local intensity grows after neighbouring intensity reaches beyond a certain threshold based on local risk factor. 
+
+**This is yet to be implemented, WORK IN PROGRESS.**
+
 # Fire Occurrence
 Stochastic fire generation is based on comparison between a uniform RNG and the risk factor of the corresponding grid block. 
 If the output from the uniform RNG is within the risk factor of the corresponding grid, then a fire will be generated. 
 The intensity of the new fire will be normally stochastic, with arbitrary mean and standard deviation. 
 
-# Grid Health regeneration. 
+# Grid Health restoration. 
 Grid health will be replenished at a fixed rate when there is no fire present in the corresponding grid block. 
 A cost corresponds to each regen, and scales to small regen steps when the health is almost fully restored. 
 
