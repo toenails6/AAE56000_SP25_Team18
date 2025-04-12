@@ -68,6 +68,9 @@ Fire intensities are constrained to minimum of 0 and maximum of 1.
 Grid blocks with fire intensity of 0 means have no active presence of fires. 
 A fire intensity of 1 effectively instantly depletes the health a grid block. 
 
+Fires are considered as dead when intensity is three standard deviations below mean of new fire intensity settings. 
+Fires also end when health of the corresponding grid block is depleted. 
+
 # Fire Spread
 Fires can spread based on intensity and neighbouring risk factors, which means local intensity grows after neighbouring intensity reaches beyond a certain threshold based on local risk factor. 
 

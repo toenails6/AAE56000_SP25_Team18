@@ -10,6 +10,12 @@ classdef gridSettingsClass < handle
 
         % Length of the simulation in ticks. 
         tickSpan; 
+
+        % Risk factor generation parameters. 
+        riskFactorMean; 
+        riskFactorStandardDeviation; 
+        riskFactorAmplitudeMean; 
+        riskFactorAmplitudeStandardDeviation; 
         
         % Grid health restore rate, in units of fraction per tick. 
         restoreGridHealthRate; 

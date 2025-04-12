@@ -83,6 +83,17 @@ classdef fireClass < handle
             % Update intensity and health. 
             obj.intensity = min(max(I, 0), 1); 
             obj.gridHandle.gridHealth = min(max(H, 0), 1); 
+
+            % Enforce minimum fire intensity threshold. 
+            % Defined as three standard deviations below mean of new fire
+            % intensity. 
+            eps = min( ...
+                obj.gridHandle.newFireIntensityMean - ...
+                3*obj.gridHandle.newFireIntensityStandardDeviation); 
+            obj.intensity(obj.intensity<eps) = 0; 
+
+            % Fires end when health is depleted. 
+            obj.intensity(obj.gridHandle.gridHealth<1E-3) = 0; 
         end
     end
 end
