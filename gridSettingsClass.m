@@ -1,11 +1,15 @@
 % Simulation and grid settings class. 
 classdef gridSettingsClass < handle
     properties
-        gridSize
+        % Grid size. 
+        gridSize; 
 
         % The desired number of ticks to be in a year.
         % Used to tune oscillation frequencies. 
         ticksPerYear; 
+
+        % Length of the simulation in ticks. 
+        tickSpan; 
         
         % Grid health restore rate, in units of fraction per tick. 
         restoreGridHealthRate; 

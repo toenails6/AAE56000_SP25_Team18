@@ -4,6 +4,7 @@
 classdef gridClass < gridSettingsClass
     properties
         tick = 1; 
+        tickSpanRNG_Seed; 
         riskFactor; 
         riskFactor_0; 
         riskFactorAmplitudes; 
@@ -27,6 +28,10 @@ classdef gridClass < gridSettingsClass
                     gridSettings.(gridSettingsProperties{i}); 
             end
 
+            % Generate RNG seed for every tick of the simulation. 
+            rng(1024); 
+            obj.tickSpanRNG_Seed = randi(1E8, size(obj.tickSpan)); 
+
             % Initialize grid health. 
             obj.gridHealth = ones(obj.gridSize); 
 
@@ -37,7 +42,6 @@ classdef gridClass < gridSettingsClass
             obj.riskFactor_0 = min(max( ...
                 normrnd(-0.5, 0.4, obj.gridSize(1), obj.gridSize(2)), ...
                 0), 1); 
-            rng("default"); 
 
             % Generate risk factor oscillation amplitudes. 
             obj.riskFactorAmplitudes = zeros( ...
@@ -46,7 +50,6 @@ classdef gridClass < gridSettingsClass
             obj.riskFactorAmplitudes = min(max( ...
                 normrnd(0.2, 0.1, obj.gridSize(1), obj.gridSize(2)), ...
                 0), 1); 
-            rng("default"); 
 
             % Instantiate fire simulations class. 
             obj.fires = fireClass(obj); 
@@ -83,7 +86,6 @@ classdef gridClass < gridSettingsClass
 
         % Update tick method. 
         function obj = updateTick(obj)
-            % obj.tick = mod(obj.tick+1, obj.ticksPerYear); 
             obj.tick = obj.tick + 1; 
         end
 
