@@ -11,6 +11,12 @@ classdef fireClass < handle
     properties
         intensity; 
         peakIntensityHealth; 
+        
+        % DISCUSS - should be fire-intrinsic or global?
+        airEff;
+        groundEff;
+        %
+        
         gridHandle gridClass; 
     end
     methods
@@ -94,6 +100,27 @@ classdef fireClass < handle
 
             % Fires end when health is depleted. 
             obj.intensity(obj.gridHandle.gridHealth<1E-3) = 0; 
+        end
+
+        function obj = extinguish(obj)
+            % assumes committed resources are a grid property
+            % check available air & ground resources at fire location
+            ar = obj.gridHandle.airResources;
+            gr = obj.gridHandle.groundResources;
+
+            % applies air resources, then ground resources to contain
+            % air resources have constant utility
+            obj.intensity = obj.intensity - (obj.airEff * ar);
+            % ground resources have lower utility in dangerous conditions
+            obj.intensity = obj.intensity - ((1 - obj.intensity) * obj.groundEff * gr);
+
+            % return committed resources to station
+            obj = returnResources(obj);
+        end
+
+        % Send resources back to station
+        function obj = returnResources(obj)
+            % pseudocode - add committed resources back to original station
         end
     end
 end
