@@ -34,6 +34,9 @@ classdef gridSettingsClass < handle
         peakIntensityHealthMax; 
         peakIntensityHealth_mean; 
         peakIntensityHealth_standardDeviation; 
+
+        % Satellite Scan Frequency in ticks. 
+        satelliteScanFrequency = 8; 
     end
 end
 
