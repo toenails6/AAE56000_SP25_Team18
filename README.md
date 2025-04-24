@@ -72,7 +72,7 @@ Fires are considered as dead when intensity is three standard deviations below m
 Fires also end when health of the corresponding grid block is depleted. 
 
 # Fire Spread
-Fires can spread based on intensity and neighbouring risk factors, which means local intensity grows after neighbouring intensity reaches beyond a certain threshold based on local risk factor. 
+Fires can spread based on intensity and neighboring risk factors, which means local intensity grows after neighboring intensity reaches beyond a certain threshold based on local risk factor. 
 
 **This is yet to be implemented, WORK IN PROGRESS.**
 
