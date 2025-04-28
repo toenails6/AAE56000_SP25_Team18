@@ -34,39 +34,41 @@ classdef stationClass < handle
         end
 
         %Determines the priority of a fire
-        function priority = firePriority(station,fire,satList)
+        function priority = firePriority(station,fire,distance, health, type)
             arguments
                 station stationClass
-                fire fireClass
-                satList
+                fire
+                distance
+                health
+                type
             end
 
             %Example weights for the priority eqn (CAN CHANGE)
-            DISTANCE_WEIGHT = 1;
-            INTENSITY_WEIGHT = 1;
-            GRID_HEALTH_WEIGHT = 1;
+            if type == "AIR"
+                DISTANCE_WEIGHT = 1;
+                INTENSITY_WEIGHT = 1;
+                GRID_HEALTH_WEIGHT = 1;
+            else
+                DISTANCE_WEIGHT = 2;
+                INTENSITY_WEIGHT = 1;
+                GRID_HEALTH_WEIGHT = 1;
+            end
             
             %generates an estimate for fire information from satellite or
             %self
-
-            if(sat.isSatelliteTime()) %Satellite Scan
-                [distance, intensity, health] = satelliteClass.satelliteInfo(station, fire, satList);
-            else %normal scan
-                [distance, intensity, health] = generateInfo(station, fire);
-            end
-
             %example equation to determine the fire priority (CAN CHANGE)
-            priority = ((INTENSITY_WEIGHT*intensity)... 
+            priority = ((INTENSITY_WEIGHT*fire)... 
                 + 1/(GRID_HEALTH_WEIGHT*health))...
                 / (DISTANCE_WEIGHT*distance)^2;
         end
 
         %Determines Priority of another station for resources
         %Station 1 is home station, station 2 would be receiving
-        function priority = stationPriority(station1, station2)
+        function priority = stationPriority(station1, station2, type)
             arguments
                 station1 stationClass
                 station2 stationClass
+                type
             end
             
             %Parameter weights (CAN CHANGE)
@@ -159,6 +161,27 @@ classdef stationClass < handle
             end
 
             priorities = station.priorityList;
+            
+            total = 0;
+            for ii = 1:length(priorities)
+                total = total + priorities{ii}(1);
+            end
+
+            for ii = 1:length(priorities)
+                tempGround = round(station.groundResources*priorities{ii}(1)/total);
+                tempAir = round(station.airResources*priorities{ii}(1)/total);
+
+                if tempGround >= 0
+                    receiveResources(priorities{ii}(2),0,tempGround);
+                end
+                if tempAir >= 0
+                    receiveResources(priorities{ii}(2),tempAir,0);
+                end
+            end
+
+            station.groundResources = station.groundResources - tempGround;
+            station.airResources = station.airResources - tempAir;
+
 
             %What I expect is that the priorities are first summed, and
             %then for each item in the list, you do (available resources) *
@@ -198,23 +221,13 @@ classdef stationClass < handle
             %rises higher, it will generate aerial units as well
 
             %Pseudo code
-
+            
             %sum priority values from priority list
             
             %if total priority > ground threshold, begin adding 1 ground
             %unit
 
             %if total priority > air threshold, begin adding 1 air unit
-        end
-        %Generates info + inaccuracies about a fire
-        function info = generateInfo(station, fire)
-            %Pseudocode
-
-            %Distance = distance eqn + random error
-            %intensity = fire.intensity + error
-            %health = fire.gridHealth + error
-            %info = [distance, intensity, health]
-
         end
 
     end
