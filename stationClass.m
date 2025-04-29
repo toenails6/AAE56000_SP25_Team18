@@ -98,9 +98,13 @@ classdef stationClass < handle
 
 
             %Example priority equation (CAN CHANGE)
-            priority = (AIR_WEIGHT*(MAX_AIR-station2.airResources)...
-                + GROUND_WEIGHT*(MAX_GROUND-station2.groundResources))...
-                / (DISTANCE_WEIGHT*distance);
+            if type == "AIR"
+                priority = AIR_WEIGHT*(MAX_AIR-station2.airResources)...
+                    / (DISTANCE_WEIGHT*distance);
+            else
+                priority = (GROUND_WEIGHT*(MAX_GROUND-station2.groundResources))...
+                    / (DISTANCE_WEIGHT*distance);
+            end
         end
 
         %Determines how important it is to keep resources available
@@ -130,25 +134,25 @@ classdef stationClass < handle
         %fireList: list of all fires on a grid
         %stationList: list of all stations on the grid
         %satList: List of all satellites
-        function generatePriorityList(station, fireList, stationList, satList)
+        function generatePriorityList(station, fireList, stationList)
             arguments
                 station stationClass
                 fireList
                 stationList
-                satList
             end
                 
-            station.priorityList{1} = {selfPriority(station), station};
+            station.priorityList{1} = {[selfPriority(station), selfPriority(station)], station};
             
             index = 2;
             for fire = fireList
-                tempPriority = firePriority(station,fire,satList);
-                station.priorityList{index} = {tempPriority,fire};
+                tempPriorityG = firePriority(station,fire,"GROUND");
+                tempPriorityA = firePriority(station,fire,"AIR");
+                station.priorityList{index} = {[tempPriorityG,tempPriorityA],fire};
                 index = index + 1;
             end
 
             for station2 = stationList
-                station.priorityList{index} = {stationPriority(station,station2),station2};
+                station.priorityList{index} = {[stationPriority(station,station2,"GROUND"),stationPriority(station,station2,"AIR")],station2};
                 index = index + 1;
             end 
         end
@@ -164,12 +168,12 @@ classdef stationClass < handle
             
             total = 0;
             for ii = 1:length(priorities)
-                total = total + priorities{ii}(1);
+                total = total + priorities{ii}(1) + priorities{ii}(2);
             end
 
             for ii = 1:length(priorities)
                 tempGround = round(station.groundResources*priorities{ii}(1)/total);
-                tempAir = round(station.airResources*priorities{ii}(1)/total);
+                tempAir = round(station.airResources*priorities{ii}(2)/total);
 
                 if tempGround >= 0
                     receiveResources(priorities{ii}(2),0,tempGround);
@@ -181,6 +185,7 @@ classdef stationClass < handle
 
             station.groundResources = station.groundResources - tempGround;
             station.airResources = station.airResources - tempAir;
+
 
 
             %What I expect is that the priorities are first summed, and
@@ -219,11 +224,34 @@ classdef stationClass < handle
             %prioirity fires or several stations in need), then it will
             %start to mobilize ground units first, and if the priority
             %rises higher, it will generate aerial units as well
+            
+            arguments
+                station stationClass
+            end
 
-            %Pseudo code
-            
+            AIR_THRESHOLD = 10;
+            GROUND_THRESHOLD = 10;
+
+            MAX_AIR = 5;
+            MAX_GROUND = 10;
+
+            priorities = station.priorityList;
+            groundTotal = 0;
+            airTotal = 0;
+
+            for ii = 1:length(priorities)
+                groundTotal = groundTotal + priorities{ii}(1);
+                airTotal = airTotal + priorities{ii}(2);
+            end
+        
+
             %sum priority values from priority list
-            
+            if groundTotal > GROUND_THRESHOLD & station.groundResources < MAX_GROUND
+                receiveResources(station,0,1);
+            end
+            if airTotal > AIR_THRESHOLD & station.airResources < MAX_AIR
+                sreceiveResources(station,1,0);
+            end
             %if total priority > ground threshold, begin adding 1 ground
             %unit
 
