@@ -14,10 +14,12 @@ classdef stationClass < handle
         airResources; %Amount of air recources
         groundResources; %Amount of ground resources
         priorityList; %The list priority for actions
-        gridHandle gridclass
+        gridHandle gridclass;
+        resourceTracker;
+
     end
 
-    methods (Static)
+    methods
         %Constructor
         function obj = stationClass(gridHandle, location, ...
                 initAir, initGround)
@@ -31,8 +33,11 @@ classdef stationClass < handle
             obj.groundResources = initGround;
             %Initializes priority list to cell array
             obj.priorityList = {};
-        end
+            obj.resourceTracker = {};
 
+        end
+    end
+    methods (Static)
         %Determines the priority of a fire
         function priority = firePriority(station,fire,distance, health, type)
             arguments
@@ -134,58 +139,78 @@ classdef stationClass < handle
         %fireList: list of all fires on a grid
         %stationList: list of all stations on the grid
         %satList: List of all satellites
-        function generatePriorityList(station, fireList, stationList)
+        function generatePriorityList(station, intensityList, healthList, stationList)
             arguments
                 station stationClass
-                fireList
-                stationList
+                intensityList double
+                healthList double
+                stationList cell
             end
-                
-            station.priorityList{1} = {[selfPriority(station), selfPriority(station)], station};
+            sz = size(intensityList);
+
             
+            station.priorityList = {};
+
+            station.priorityList{1} = {[selfPriority(station),selfPriority(station)],station.location};
             index = 2;
-            for fire = fireList
-                tempPriorityG = firePriority(station,fire,"GROUND");
-                tempPriorityA = firePriority(station,fire,"AIR");
-                station.priorityList{index} = {[tempPriorityG,tempPriorityA],fire};
-                index = index + 1;
+            for x = 1:sz(1)
+                for y = 1:sz(2)
+                    if intensityList(x,y) > 0
+                        distance = sqrt((station.location(1)-x)^2 + (station.location(2)-y)^2);
+                        station.priorityList{index} = ...
+                            {[firePriority(station,intensityList(x,y),distance, healthList(x,y), "GROUND"),...
+                            firePriority(station,intensityList(x,y),distance,healthList(x,y),"AIR")], [x,y]};
+                            index = index+1;
+                    end
+                end
             end
 
-            for station2 = stationList
-                station.priorityList{index} = {[stationPriority(station,station2,"GROUND"),stationPriority(station,station2,"AIR")],station2};
-                index = index + 1;
-            end 
+            for st = stationList
+                station.priorityList{index} = {[stationPriority(station,st,"GROUND"), stationPriority(station,st,"AIR")],
+                    [st.location(1),station.location(2)]};
+                index = index+1;
+            end
+            
         end
 
         %This will determine how the home station sends resources from the
         %overall priority list
-        function sendResources(station)
+        function newResources  = sendResources(station,groundList, airList)
             arguments
                 station stationClass
+                groundList double
+                airList double
             end
+
+            newResources = {};
 
             priorities = station.priorityList;
             
             total = 0;
             for ii = 1:length(priorities)
-                total = total + priorities{ii}(1) + priorities{ii}(2);
+                total = total + priorities{ii}{1}(1) + priorities{ii}{1}(2);
             end
 
             for ii = 1:length(priorities)
-                tempGround = round(station.groundResources*priorities{ii}(1)/total);
-                tempAir = round(station.airResources*priorities{ii}(2)/total);
+                tempGround = round(station.groundResources*priorities{ii}{1}(1)/total);
+                tempAir = round(station.airResources*priorities{ii}{1}(2)/total);
 
                 if tempGround >= 0
-                    receiveResources(priorities{ii}(2),0,tempGround);
+                    groundList(priorities{ii}{2}(1),priorities{ii}{2}(2)) = ...
+                        groundList(priorities{ii}{2}(1),priorities{ii}{2}(2)) + tempGround;
+                    resourceTracker{length(resourceTracker)+1} = [tempGround,0;priorities{ii}{2}(1),priorities{ii}{2}(2)];
                 end
                 if tempAir >= 0
-                    receiveResources(priorities{ii}(2),tempAir,0);
+                    airList(priorities{ii}{2}(1),priorities{ii}{2}(2)) = ...
+                        airList(priorities{ii}{2}(1),priorities{ii}{2}(2)) + tempAir;
+                    resourceTracker{length(resourceTracker)+1} = [0,tempAir;priorities{ii}{2}(1),priorities{ii}{2}(2)];
                 end
             end
+            groundList(station.location(1),station.location(2)) = groundList(station.location(1),station.location(2)) - groundTemp;
+            airList(station.location(1),station.location(2)) = airList(station.location(1),station.location(2)) - airTemp;
 
-            station.groundResources = station.groundResources - tempGround;
-            station.airResources = station.airResources - tempAir;
-
+            newResources{1} = groundList;
+            newResources{2} = airList;
 
 
             %What I expect is that the priorities are first summed, and
@@ -201,18 +226,55 @@ classdef stationClass < handle
 
         end
 
+        function newResources = returnResources(station,intensities,groundList,airList)
+            arguments
+                station stationClass
+                intensities double
+                groundList double
+                airList double
+            end
+            newResources = {};
+
+            for ii = 1:length(station.resourceTracker)
+                log = station.resourceTracker{ii};
+                x = log(2,1);
+                y = log(2,2);
+
+                ground = log(1,1);
+                air = log(1,2);
+
+                if intensities(x,y) == 0 & (ground > 0 || air > 0)
+                    groundList(x,y) = groundList - ground;
+                    airList(x,y) = airList - air;
+
+                    groundList(station.location(1),station.location(2)) =...
+                        groundList(station.location(1),station.location(2))+ground;
+                    airList(station.location(1),station.location(2)) =...
+                        airList(station.location(1),station.location(2))+air;
+                    
+                end
+
+            end
+
+            newResources{1} = groundList;
+            newResources{2} = airList;
+
+        end
 
         %This will happen when a station receives resources from another
         %station or returning from an extinguished fire
-        function receiveResources(station, air, ground)
+        function updateResources(station, groundList,airList)
             arguments
                 station stationClass
-                air double
-                ground double
+                groundList double
+                airList double
             end
 
-            station.airResources = station.airResources + air;
-            station.groundResources = station.groundResources + ground;
+            x = station.location(1);
+            y = station.location(2);
+
+            station.groundResources = groundList(x,y);
+            station.airResources = airList(x,y);
         end
 
         %Allows a station to mobilize/generate more supplies if there is a
