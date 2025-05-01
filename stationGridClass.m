@@ -2,7 +2,10 @@
 %simulates their actions using fire intensities.
 
 classdef stationGridClass < handle
-
+    %Station Grid is a list of the current fire stations
+    %Air grid is a 2D matrix that details the current number of air
+    %resources throughout the entire grid
+    %The ground grid details how many ground grids there are as well
     properties
         stationGrid;
         airGrid;
@@ -12,6 +15,7 @@ classdef stationGridClass < handle
 
     methods
         %Constructor
+        %x is the x location of the station, y is the y location
         function obj = stationGridClass(gridHandle,x,y,n)
             obj.gridHandle = gridHandle;
             obj.stationGrid = {};

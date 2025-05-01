@@ -14,7 +14,7 @@ classdef stationClass < handle
         airResources; %Amount of air recources
         groundResources; %Amount of ground resources
         priorityList; %The list priority for actions
-        gridHandle gridclass;
+        gridHandle;
         resourceTracker;
 
     end
@@ -151,22 +151,23 @@ classdef stationClass < handle
             
             station.priorityList = {};
 
-            station.priorityList{1} = {[selfPriority(station),selfPriority(station)],station.location};
+            station.priorityList{1} = {[stationClass.selfPriority(station),stationClass.selfPriority(station)],station.location};
             index = 2;
             for x = 1:sz(1)
                 for y = 1:sz(2)
                     if intensityList(x,y) > 0
                         distance = sqrt((station.location(1)-x)^2 + (station.location(2)-y)^2);
                         station.priorityList{index} = ...
-                            {[firePriority(station,intensityList(x,y),distance, healthList(x,y), "GROUND"),...
-                            firePriority(station,intensityList(x,y),distance,healthList(x,y),"AIR")], [x,y]};
+                            {[stationClass.firePriority(station,intensityList(x,y),distance, healthList(x,y), "GROUND"),...
+                            stationClass.firePriority(station,intensityList(x,y),distance,healthList(x,y),"AIR")], [x,y]};
                             index = index+1;
                     end
                 end
             end
 
-            for st = stationList
-                station.priorityList{index} = {[stationPriority(station,st,"GROUND"), stationPriority(station,st,"AIR")],
+            for ii = 1:length(stationList)
+                st = stationList{ii};
+                station.priorityList{index} = {[stationClass.stationPriority(station,st,"GROUND"), stationClass.stationPriority(station,st,"AIR")],...
                     [st.location(1),station.location(2)]};
                 index = index+1;
             end
@@ -198,16 +199,18 @@ classdef stationClass < handle
                 if tempGround >= 0
                     groundList(priorities{ii}{2}(1),priorities{ii}{2}(2)) = ...
                         groundList(priorities{ii}{2}(1),priorities{ii}{2}(2)) + tempGround;
-                    resourceTracker{length(resourceTracker)+1} = [tempGround,0;priorities{ii}{2}(1),priorities{ii}{2}(2)];
+                    groundList(station.location(1),station.location(2)) = groundList(station.location(1),station.location(2)) - tempGround;
+                    station.resourceTracker{length(station.resourceTracker)+1} = [tempGround,0;priorities{ii}{2}(1),priorities{ii}{2}(2)];
                 end
                 if tempAir >= 0
                     airList(priorities{ii}{2}(1),priorities{ii}{2}(2)) = ...
                         airList(priorities{ii}{2}(1),priorities{ii}{2}(2)) + tempAir;
-                    resourceTracker{length(resourceTracker)+1} = [0,tempAir;priorities{ii}{2}(1),priorities{ii}{2}(2)];
+                    station.resourceTracker{length(station.resourceTracker)+1} = [0,tempAir;priorities{ii}{2}(1),priorities{ii}{2}(2)];
+                    airList(station.location(1),station.location(2)) = airList(station.location(1),station.location(2)) - tempAir;
                 end
             end
-            groundList(station.location(1),station.location(2)) = groundList(station.location(1),station.location(2)) - groundTemp;
-            airList(station.location(1),station.location(2)) = airList(station.location(1),station.location(2)) - airTemp;
+            
+            
 
             newResources{1} = groundList;
             newResources{2} = airList;
@@ -226,33 +229,51 @@ classdef stationClass < handle
 
         end
 
-        function newResources = returnResources(station,intensities,groundList,airList)
+        function newResources = returnResources(station,intensities,groundList,airList,stationList)
             arguments
                 station stationClass
                 intensities double
                 groundList double
                 airList double
+                stationList
             end
             newResources = {};
-
-            for ii = 1:length(station.resourceTracker)
+            ii = 1;
+            while ii <= length(station.resourceTracker)
                 log = station.resourceTracker{ii};
                 x = log(2,1);
                 y = log(2,2);
 
                 ground = log(1,1);
                 air = log(1,2);
-
-                if intensities(x,y) == 0 & (ground > 0 || air > 0)
-                    groundList(x,y) = groundList - ground;
-                    airList(x,y) = airList - air;
+                B1 = 1;
+                for jj = 1:length(stationList)
+                    st = stationList{jj};
+                    x2 = st.location(1);
+                    y2 = st.location(2);
+                    if x == x2 && y == y2
+                        B1 = 0;
+                        station.resourceTracker(ii) = [];
+                        ii = ii-1;
+                    elseif ground == 0 & air == 0;
+                        B1 = 0;
+                        station.resourceTracker(ii) = [];
+                        ii = ii-1;
+                    end
+                end
+                if intensities(x,y) == 0 & (ground > 0 || air > 0) & B1 == 1
+                    groundList(x,y) = groundList(x,y) - ground;
+                    airList(x,y) = airList(x,y) - air;
 
                     groundList(station.location(1),station.location(2)) =...
                         groundList(station.location(1),station.location(2))+ground;
                     airList(station.location(1),station.location(2)) =...
                         airList(station.location(1),station.location(2))+air;
+                    station.resourceTracker(ii) = [];
+                    ii = ii-1;
                     
                 end
+                ii = ii+1;
 
             end
 
