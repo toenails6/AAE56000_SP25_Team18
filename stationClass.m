@@ -14,18 +14,19 @@ classdef stationClass < handle
         airResources; %Amount of air recources
         groundResources; %Amount of ground resources
         priorityList; %The list priority for actions
-        gridHandle;
+        stationID;
         resourceTracker;
+        cost;
 
     end
 
     methods
         %Constructor
-        function obj = stationClass(gridHandle, location, ...
+        function obj = stationClass(ID, location, ...
                 initAir, initGround)
 
             %Connects station to grid
-            obj.gridHandle = gridHandle;
+            obj.stationID = ID;
             %Places the station
             obj.location = location;
             %Initializes the resources for the station
@@ -34,6 +35,7 @@ classdef stationClass < handle
             %Initializes priority list to cell array
             obj.priorityList = {};
             obj.resourceTracker = {};
+            obj.cost = 150e6 + 20e6*initAir+2e6*initGround;
 
         end
     end
@@ -50,21 +52,31 @@ classdef stationClass < handle
 
             %Example weights for the priority eqn (CAN CHANGE)
             if type == "AIR"
-                DISTANCE_WEIGHT = 1;
-                INTENSITY_WEIGHT = 1;
-                GRID_HEALTH_WEIGHT = 1;
+                DISTANCE_WEIGHT = 712/15/400;
+                INTENSITY_WEIGHT = 8;
+                GRID_HEALTH_WEIGHT = 0.01;
+                POW = 3;
             else
-                DISTANCE_WEIGHT = 2;
-                INTENSITY_WEIGHT = 1;
-                GRID_HEALTH_WEIGHT = 1;
+                DISTANCE_WEIGHT = 1.2/200;
+                INTENSITY_WEIGHT = 10;
+                GRID_HEALTH_WEIGHT = 0.5;
+                POW = 1;
             end
-            
-            %generates an estimate for fire information from satellite or
-            %self
+
+            if distance == 0
+                priority = 3*((INTENSITY_WEIGHT*fire)^POW... 
+                + 1/(GRID_HEALTH_WEIGHT*health));
+                return
+            end
+            if health <= 0.1
+                health = 0.1;
+                return
+            end
+
             %example equation to determine the fire priority (CAN CHANGE)
-            priority = ((INTENSITY_WEIGHT*fire)... 
+            priority = ((INTENSITY_WEIGHT*fire)^POW... 
                 + 1/(GRID_HEALTH_WEIGHT*health))...
-                / (DISTANCE_WEIGHT*distance)^2;
+                / (DISTANCE_WEIGHT*distance);
         end
 
         %Determines Priority of another station for resources
@@ -77,13 +89,13 @@ classdef stationClass < handle
             end
             
             %Parameter weights (CAN CHANGE)
-            AIR_WEIGHT = 1;
+            AIR_WEIGHT = 12;
             GROUND_WEIGHT = 1;
-            DISTANCE_WEIGHT = 1;
+            DISTANCE_WEIGHT = 0.2;
 
             %Max number of resources a station can hold (CAN CHANGE)
             MAX_AIR = 5;
-            MAX_GROUND = 10;
+            MAX_GROUND = 20;
             
             %Ensures that if same station, no priority
             if station1.location == station2.location
@@ -92,11 +104,10 @@ classdef stationClass < handle
             end
 
             %Ensures that if station is at capacity, don't send more
-            if station2.airResources >= MAX_AIR || station2.groundResources >= MAX_GROUND
+            if station2.airResources > MAX_AIR || station2.groundResources > MAX_GROUND
                 priority = 0;
                 return
             end
-
 
             distance = sqrt((station2.location(1)-station1.location(1))^2 ...
                 + (station2.location(2)-station1.location(2))^2);
@@ -104,10 +115,10 @@ classdef stationClass < handle
 
             %Example priority equation (CAN CHANGE)
             if type == "AIR"
-                priority = AIR_WEIGHT*(MAX_AIR-station2.airResources)...
+                priority = AIR_WEIGHT*(MAX_AIR-station2.airResources)^2 ...
                     / (DISTANCE_WEIGHT*distance);
             else
-                priority = (GROUND_WEIGHT*(MAX_GROUND-station2.groundResources))...
+                priority = GROUND_WEIGHT*(MAX_GROUND-station2.groundResources)^2 ...
                     / (DISTANCE_WEIGHT*distance);
             end
         end
@@ -119,19 +130,18 @@ classdef stationClass < handle
         function priority = selfPriority(station)
             
             %Parameter Weights
-            AIR_WEIGHT = 1;
-            GROUND_WEIGHT = 1;
-            GENERAL_GAIN = 0.5;
+            AIR_WEIGHT = 100;
+            GROUND_WEIGHT = 10;
             MAX_AIR = 5;
-            MAX_GROUND = 10;
+            MAX_GROUND = 20;
 
-            if station.airResources >= MAX_AIR || station.groundResources >= MAX_GROUND
-                priority = 0;
+            if station.airResources > MAX_AIR || station.groundResources > MAX_GROUND
+                priority = [0,0];
                 return
             end
 
-            priority = GENERAL_GAIN * (AIR_WEIGHT*(MAX_AIR - station.airResources) ...
-                + GROUND_WEIGHT*(MAX_GROUND - station.groundResources));
+            priority = [GROUND_WEIGHT*(MAX_GROUND - station.groundResources), ... 
+                AIR_WEIGHT*(MAX_AIR - station.airResources)];
         end
 
         %Creates the list of priorities
@@ -151,7 +161,7 @@ classdef stationClass < handle
             
             station.priorityList = {};
 
-            station.priorityList{1} = {[stationClass.selfPriority(station),stationClass.selfPriority(station)],station.location};
+            station.priorityList{1} = {stationClass.selfPriority(station),station.location};
             index = 2;
             for x = 1:sz(1)
                 for y = 1:sz(2)
@@ -187,14 +197,16 @@ classdef stationClass < handle
 
             priorities = station.priorityList;
             
-            total = 0;
+            totalG = 0;
+            totalA = 0;
             for ii = 1:length(priorities)
-                total = total + priorities{ii}{1}(1) + priorities{ii}{1}(2);
+                totalG = totalG + priorities{ii}{1}(1);
+                totalA = totalA + priorities{ii}{1}(2);
             end
 
             for ii = 1:length(priorities)
-                tempGround = round(station.groundResources*priorities{ii}{1}(1)/total);
-                tempAir = round(station.airResources*priorities{ii}{1}(2)/total);
+                tempGround = round(station.groundResources*priorities{ii}{1}(1)/totalG);
+                tempAir = round(station.airResources*priorities{ii}{1}(2)/totalA);
 
                 if tempGround >= 0
                     groundList(priorities{ii}{2}(1),priorities{ii}{2}(2)) = ...
@@ -251,17 +263,17 @@ classdef stationClass < handle
                     st = stationList{jj};
                     x2 = st.location(1);
                     y2 = st.location(2);
-                    if x == x2 && y == y2
+                    if x == x2 && y == y2 && B1
                         B1 = 0;
                         station.resourceTracker(ii) = [];
                         ii = ii-1;
-                    elseif ground == 0 & air == 0;
+                    elseif ground == 0 && air == 0 && B1
                         B1 = 0;
                         station.resourceTracker(ii) = [];
                         ii = ii-1;
                     end
                 end
-                if intensities(x,y) == 0 & (ground > 0 || air > 0) & B1 == 1
+                if intensities(x,y) == 0 & (ground > 0 || air > 0) && B1 == 1
                     groundList(x,y) = groundList(x,y) - ground;
                     airList(x,y) = airList(x,y) - air;
 
@@ -271,6 +283,8 @@ classdef stationClass < handle
                         airList(station.location(1),station.location(2))+air;
                     station.resourceTracker(ii) = [];
                     ii = ii-1;
+
+                    station.cost = station.cost + ground*3e4 + air*3e5;
                     
                 end
                 ii = ii+1;
@@ -300,7 +314,7 @@ classdef stationClass < handle
 
         %Allows a station to mobilize/generate more supplies if there is a
         %large amount of need
-        function mobilize(station)
+        function newResources = mobilize(station,groundResources,airResources)
             %what I'm imagining is that the total priority of the home
             %station is summed up, and if the total priority crosses a
             %certain threshold (meaning that either there are several high
@@ -310,31 +324,43 @@ classdef stationClass < handle
             
             arguments
                 station stationClass
+                groundResources double
+                airResources double
             end
 
-            AIR_THRESHOLD = 10;
-            GROUND_THRESHOLD = 10;
+            AIR_THRESHOLD = 1500;
+            GROUND_THRESHOLD = 500;
 
             MAX_AIR = 5;
-            MAX_GROUND = 10;
+            MAX_GROUND = 20;
 
             priorities = station.priorityList;
             groundTotal = 0;
             airTotal = 0;
+            x = station.location(1);
+            y = station.location(2);
 
             for ii = 1:length(priorities)
-                groundTotal = groundTotal + priorities{ii}(1);
-                airTotal = airTotal + priorities{ii}(2);
+                groundTotal = groundTotal + priorities{ii}{1}(1);
+                airTotal = airTotal + priorities{ii}{1}(2);
             end
         
 
             %sum priority values from priority list
-            if groundTotal > GROUND_THRESHOLD & station.groundResources < MAX_GROUND
-                receiveResources(station,0,1);
+            if groundTotal > GROUND_THRESHOLD && station.groundResources < MAX_GROUND
+                groundResources(x,y) = groundResources(x,y) + 1;
+                station.groundResources = station.groundResources + 1;
+                station.cost = station.cost + 20e6;
             end
-            if airTotal > AIR_THRESHOLD & station.airResources < MAX_AIR
-                sreceiveResources(station,1,0);
+            if airTotal > AIR_THRESHOLD && station.airResources < MAX_AIR
+                airResources(x,y) = airResources(x,y) + 1;
+                station.airResources = station.airResources + 1;
+                station.cost = station.cost + 20e6;
             end
+
+            newResources = {groundResources,airResources};
+
+        
             %if total priority > ground threshold, begin adding 1 ground
             %unit
 

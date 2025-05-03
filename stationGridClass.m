@@ -10,25 +10,26 @@ classdef stationGridClass < handle
         stationGrid;
         airGrid;
         groundGrid;
-        gridHandle gridclass;
+        totalCost;
     end
 
     methods
         %Constructor
         %x is the x location of the station, y is the y location
-        function obj = stationGridClass(gridHandle,x,y,n)
-            obj.gridHandle = gridHandle;
+        function obj = stationGridClass(x,y,n)
             obj.stationGrid = {};
             obj.airGrid = zeros(x,y);
             obj.groundGrid = zeros(x,y);
+            obj.totalCost = 0;
             
             for ii = 1:n
                 loc = [randi(x),randi(y)];
                 initAir = randi(4);
-                initGround = randi([3,8]);
-                obj.stationGrid{ii} = stationClass(gridHandle,loc,initAir,initGround);
+                initGround = randi([8,16]);
+                obj.stationGrid{ii} = stationClass(ii,loc,initAir,initGround);
                 obj.airGrid(loc(1),loc(2)) = initAir;
                 obj.groundGrid(loc(1),loc(2)) = initGround;
+                obj.totalCost = obj.totalCost + obj.stationGrid{ii}.cost;
             end
         end
 
@@ -38,23 +39,34 @@ classdef stationGridClass < handle
             stations = stationGrid.stationGrid;
             airResources = stationGrid.airGrid;
             groundResources = stationGrid.groundGrid;
+            stationGrid.totalCost = 0;
 
         
             for jj = 1:length(stations)
-                stationClass.generatePriorityList(stations{jj},fireIntensities,healths);
+                stationClass.generatePriorityList(stations{jj},fireIntensities,healths,stations);
+            end
+            for jj = 1:length(stations)
                 newResources = stationClass.sendResources(stations{jj},groundResources,airResources);
 
                 groundResources = newResources{1};
                 airResources = newResources{2};
+                
+                newResources = stationClass.mobilize(stations{jj},groundResources,airResources);
 
-                newResources = stationClass.returnResources(stations{jj},fireIntensities,groundResources,airResources);
+                groundResources = newResources{1};
+                airResources = newResources{2};
+
+                newResources = stationClass.returnResources(stations{jj},fireIntensities,groundResources,airResources,stations);
 
                 groundResources = newResources{1};
                 airResources = newResources{2};
 
                 stationClass.updateResources(stations{jj},groundResources,airResources);
+                stationGrid.totalCost = stationGrid.totalCost + stations{jj}.cost;
                 
             end
+            stationGrid.groundGrid = groundResources;
+            stationGrid.airGrid = airResources;
         end
     end
 end
