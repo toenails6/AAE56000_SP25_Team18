@@ -41,12 +41,14 @@ classdef stationClass < handle
     end
     methods (Static)
         %Determines the priority of a fire
-        function priority = firePriority(station,fire,distance, health, type)
+        function priority = firePriority(station,fire,distance, health, ground, air, type)
             arguments
                 station stationClass
                 fire
                 distance
                 health
+                ground
+                air
                 type
             end
 
@@ -54,29 +56,27 @@ classdef stationClass < handle
             if type == "AIR"
                 DISTANCE_WEIGHT = 712/15/400;
                 INTENSITY_WEIGHT = 8;
-                GRID_HEALTH_WEIGHT = 0.01;
+                GRID_HEALTH_WEIGHT = 800;
                 POW = 3;
+                RESOURCE_FACTOR = sqrt(1+air);
             else
                 DISTANCE_WEIGHT = 1.2/200;
                 INTENSITY_WEIGHT = 10;
-                GRID_HEALTH_WEIGHT = 0.5;
+                GRID_HEALTH_WEIGHT = 16;
                 POW = 1;
+                RESOURCE_FACTOR = (1+ground)^(1/3);
             end
 
             if distance == 0
                 priority = 3*((INTENSITY_WEIGHT*fire)^POW... 
-                + 1/(GRID_HEALTH_WEIGHT*health));
-                return
-            end
-            if health <= 0.1
-                health = 0.1;
+                + 1/(GRID_HEALTH_WEIGHT*health)) / RESOURCE_FACTOR;
                 return
             end
 
             %example equation to determine the fire priority (CAN CHANGE)
             priority = ((INTENSITY_WEIGHT*fire)^POW... 
-                + 1/(GRID_HEALTH_WEIGHT*health))...
-                / (DISTANCE_WEIGHT*distance);
+                + (GRID_HEALTH_WEIGHT*(1-health)^2))...
+                / (DISTANCE_WEIGHT*distance) / RESOURCE_FACTOR;
         end
 
         %Determines Priority of another station for resources
@@ -142,6 +142,13 @@ classdef stationClass < handle
 
             priority = [GROUND_WEIGHT*(MAX_GROUND - station.groundResources), ... 
                 AIR_WEIGHT*(MAX_AIR - station.airResources)];
+
+            if station.airResources > round(MAX_AIR/2)
+                priority(2) = 200;
+            end
+            if station.groundResources > round(MAX_GROUND/2)
+                priority(1) = 100;
+            end
         end
 
         %Creates the list of priorities
@@ -149,12 +156,14 @@ classdef stationClass < handle
         %fireList: list of all fires on a grid
         %stationList: list of all stations on the grid
         %satList: List of all satellites
-        function generatePriorityList(station, intensityList, healthList, stationList)
+        function generatePriorityList(station, intensityList, healthList, stationList, groundGrid, airGrid)
             arguments
                 station stationClass
                 intensityList double
                 healthList double
                 stationList cell
+                groundGrid double
+                airGrid double
             end
             sz = size(intensityList);
 
@@ -166,10 +175,13 @@ classdef stationClass < handle
             for x = 1:sz(1)
                 for y = 1:sz(2)
                     if intensityList(x,y) > 0
+                        gr = groundGrid(x,y);
+                        ar = airGrid(x,y);
+
                         distance = sqrt((station.location(1)-x)^2 + (station.location(2)-y)^2);
                         station.priorityList{index} = ...
-                            {[stationClass.firePriority(station,intensityList(x,y),distance, healthList(x,y), "GROUND"),...
-                            stationClass.firePriority(station,intensityList(x,y),distance,healthList(x,y),"AIR")], [x,y]};
+                            {[stationClass.firePriority(station,intensityList(x,y),distance, healthList(x,y), gr, ar, "GROUND"),...
+                            stationClass.firePriority(station,intensityList(x,y),distance,healthList(x,y), gr,ar, "AIR")], [x,y]};
                             index = index+1;
                     end
                 end
@@ -328,8 +340,8 @@ classdef stationClass < handle
                 airResources double
             end
 
-            AIR_THRESHOLD = 1500;
-            GROUND_THRESHOLD = 500;
+            AIR_THRESHOLD = 1000;
+            GROUND_THRESHOLD = 400;
 
             MAX_AIR = 5;
             MAX_GROUND = 20;

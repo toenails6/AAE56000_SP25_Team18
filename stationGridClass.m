@@ -15,7 +15,7 @@ classdef stationGridClass < handle
 
     methods
         %Constructor
-        %x is the x location of the station, y is the y location
+        %x is the number of rows of the grid, y is the number of cols location
         function obj = stationGridClass(x,y,n)
             obj.stationGrid = {};
             obj.airGrid = zeros(x,y);
@@ -43,7 +43,7 @@ classdef stationGridClass < handle
 
         
             for jj = 1:length(stations)
-                stationClass.generatePriorityList(stations{jj},fireIntensities,healths,stations);
+                stationClass.generatePriorityList(stations{jj},fireIntensities,healths,stations, groundResources, airResources);
             end
             for jj = 1:length(stations)
                 newResources = stationClass.sendResources(stations{jj},groundResources,airResources);
