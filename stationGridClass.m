@@ -14,15 +14,20 @@ classdef stationGridClass < handle
     end
 
     methods
-        %Constructor
-        %x is the number of rows of the grid, y is the number of cols location
+        % Class constructor. 
+        % x is the number of rows of the grid, y is the number of cols location
         function obj = stationGridClass(x,y,n)
             obj.stationGrid = {};
             obj.airGrid = zeros(x,y);
             obj.groundGrid = zeros(x,y);
             obj.totalCost = 0;
+
+            % Station generation RNG seeding. 
+            rng(104); 
+            seeds = rand([1, n]); 
             
             for ii = 1:n
+                rng(seeds(n)); 
                 loc = [randi(x),randi(y)];
                 initAir = randi(4);
                 initGround = randi([8,16]);
