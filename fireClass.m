@@ -7,6 +7,7 @@
 % Fires can spread based on intensity and neighbouring risk factors, which
 % means local intensity grows after neighbouring intensity reaches beyond a
 % certain threshold based on local risk factor. 
+%Test Branch
 classdef fireClass < handle
     properties
         intensity; 
