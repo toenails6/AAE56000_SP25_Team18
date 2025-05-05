@@ -357,15 +357,21 @@ classdef stationClass < handle
                 groundTotal = groundTotal + priorities{ii}{1}(1);
                 airTotal = airTotal + priorities{ii}{1}(2);
             end
-        
-
+            
+            awayAir = 0;
+            awayGround = 0;
+            
+            for ii = 1:length(station.resourceTracker)
+                awayAir = awayAir + station.resourceTracker{ii}(1,2);
+                awayGround = awayGround + station.resourceTracker{ii}(1,1);
+            end
             %sum priority values from priority list
-            if groundTotal > GROUND_THRESHOLD && station.groundResources < MAX_GROUND
+            if (groundTotal > GROUND_THRESHOLD) && ((station.groundResources + awayGround) < MAX_GROUND)
                 groundResources(x,y) = groundResources(x,y) + 1;
                 station.groundResources = station.groundResources + 1;
                 station.cost = station.cost + 20e6;
             end
-            if airTotal > AIR_THRESHOLD && station.airResources < MAX_AIR
+            if (airTotal > AIR_THRESHOLD) && ((station.airResources + awayAir) < MAX_AIR)
                 airResources(x,y) = airResources(x,y) + 1;
                 station.airResources = station.airResources + 1;
                 station.cost = station.cost + 20e6;

@@ -23,23 +23,23 @@ classdef stationGridClass < handle
             obj.totalCost = 0;
 
             % Station generation RNG seeding. 
-            rng(104); 
-            stationSeeds = rand([1, n]); 
+            rng(144); 
+            stationSeeds = 1000*rand([1, n]); 
 
             % Initial air grid generation RNG seeding. 
             rng(54); 
-            airGridSeeds = rand([1, n]); 
+            airGridSeeds = 1000*rand([1, n]); 
 
             % Initial ground grid generation RNG seeding. 
             rng(117); 
-            groundGridSeeds = rand([1, n]); 
+            groundGridSeeds = 1000*rand([1, n]); 
             
             for ii = 1:n
-                rng(stationSeeds(n)); 
+                rng(stationSeeds(ii)); 
                 loc = [randi(x),randi(y)];
-                rng(airGridSeeds(n)); 
+                rng(airGridSeeds(ii)); 
                 initAir = randi(4);
-                rng(groundGridSeeds(n)); 
+                rng(groundGridSeeds(ii)); 
                 initGround = randi([8,16]);
                 obj.stationGrid{ii} = stationClass(ii,loc,initAir,initGround);
                 obj.airGrid(loc(1),loc(2)) = initAir;
@@ -58,19 +58,17 @@ classdef stationGridClass < handle
         
             for jj = 1:length(stations)
                 stationClass.generatePriorityList(stations{jj},fireIntensities,healths,stations, groundResources, airResources);
-            end
-            for jj = 1:length(stations)
                 newResources = stationClass.sendResources(stations{jj},groundResources,airResources);
 
                 groundResources = newResources{1};
                 airResources = newResources{2};
                 
-                newResources = stationClass.mobilize(stations{jj},groundResources,airResources);
+                newResources = stationClass.returnResources(stations{jj},fireIntensities,groundResources,airResources,stations);
 
                 groundResources = newResources{1};
                 airResources = newResources{2};
 
-                newResources = stationClass.returnResources(stations{jj},fireIntensities,groundResources,airResources,stations);
+                newResources = stationClass.mobilize(stations{jj},groundResources,airResources);
 
                 groundResources = newResources{1};
                 airResources = newResources{2};
