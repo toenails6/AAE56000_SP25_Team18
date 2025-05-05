@@ -85,5 +85,13 @@ The intensity of the new fire will be normally stochastic, with arbitrary mean a
 Grid health will be replenished at a fixed rate when there is no fire present in the corresponding grid block. 
 A cost corresponds to each regen, and scales to small regen steps when the health is almost fully restored. 
 
+# Metrics. 
+Total costs
 
+Cost vs. tick
 
+Grid (5, 16) Peekaboo
+
+Satellite frequency effects. 
+
+Average fire length. 
