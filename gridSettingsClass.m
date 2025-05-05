@@ -35,8 +35,12 @@ classdef gridSettingsClass < handle
         peakIntensityHealth_mean; 
         peakIntensityHealth_standardDeviation; 
 
-        % Satellite Scan Frequency in ticks. 
+        % Default satellite Scan Frequency in ticks. 
         satelliteScanFrequency = 8; 
+
+        % Fire extinguish settings. 
+        airEfficiency; 
+        groundEfficiency; 
     end
 end
 

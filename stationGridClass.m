@@ -24,12 +24,22 @@ classdef stationGridClass < handle
 
             % Station generation RNG seeding. 
             rng(104); 
-            seeds = rand([1, n]); 
+            stationSeeds = rand([1, n]); 
+
+            % Initial air grid generation RNG seeding. 
+            rng(54); 
+            airGridSeeds = rand([1, n]); 
+
+            % Initial ground grid generation RNG seeding. 
+            rng(117); 
+            groundGridSeeds = rand([1, n]); 
             
             for ii = 1:n
-                rng(seeds(n)); 
+                rng(stationSeeds(n)); 
                 loc = [randi(x),randi(y)];
+                rng(airGridSeeds(n)); 
                 initAir = randi(4);
+                rng(groundGridSeeds(n)); 
                 initGround = randi([8,16]);
                 obj.stationGrid{ii} = stationClass(ii,loc,initAir,initGround);
                 obj.airGrid(loc(1),loc(2)) = initAir;
@@ -45,7 +55,6 @@ classdef stationGridClass < handle
             airResources = stationGrid.airGrid;
             groundResources = stationGrid.groundGrid;
             stationGrid.totalCost = 0;
-
         
             for jj = 1:length(stations)
                 stationClass.generatePriorityList(stations{jj},fireIntensities,healths,stations, groundResources, airResources);

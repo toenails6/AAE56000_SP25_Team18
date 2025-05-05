@@ -91,7 +91,7 @@ classdef stationClass < handle
             %Parameter weights (CAN CHANGE)
             AIR_WEIGHT = 12;
             GROUND_WEIGHT = 1;
-            DISTANCE_WEIGHT = 0.2;
+            DISTANCE_WEIGHT = 0.8;
 
             %Max number of resources a station can hold (CAN CHANGE)
             MAX_AIR = 5;

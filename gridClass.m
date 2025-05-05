@@ -9,10 +9,13 @@ classdef gridClass < gridSettingsClass
         riskFactor_0; 
         riskFactorAmplitudes; 
         gridHealth; 
+        airResources; 
+        groundResources; 
 
         % Subclasses: 
         fires fireClass; 
         fireScan fireScanClass; 
+        stations stationGridClass; 
     end
     methods
         % Class constructor. 
@@ -60,6 +63,12 @@ classdef gridClass < gridSettingsClass
 
             % Instantiate fire scan class. 
             obj.fireScan = fireScanClass(obj); 
+
+            % Instantiate station grid class. 
+            % stationCount = round(prod(obj.gridSize)/32); 
+            stationCount = 8; 
+            obj.stations = stationGridClass( ...
+                obj.gridSize(1), obj.gridSize(2), stationCount); 
         end
 
         % Update risk factor method, simulating periodic seasonal changes. 
@@ -103,6 +112,17 @@ classdef gridClass < gridSettingsClass
             obj.fires.generateFires(); 
             obj.fires.updateIntensity(); 
             obj.fireScan.satelliteScan(); 
+
+            % Fire stations functionality. 
+            obj.stations.updateStations( ...
+                obj.stations, ...
+                obj.fires.intensity, ...
+                obj.gridHealth); 
+            obj.airResources = obj.stations.airGrid; 
+            obj.groundResources = obj.stations.groundGrid; 
+
+            % Extinguish fires. 
+            obj.fires.extinguish(); 
 
             % Update tick at the end of the grid update method. 
             obj.updateTick(); 
