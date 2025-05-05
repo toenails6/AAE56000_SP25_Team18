@@ -58,13 +58,13 @@ classdef stationClass < handle
                 INTENSITY_WEIGHT = 8;
                 GRID_HEALTH_WEIGHT = 800;
                 POW = 3;
-                RESOURCE_FACTOR = sqrt(1+air);
+                RESOURCE_FACTOR = sqrt(1+abs(air));
             else
                 DISTANCE_WEIGHT = 1.2/200;
                 INTENSITY_WEIGHT = 10;
                 GRID_HEALTH_WEIGHT = 16;
                 POW = 1;
-                RESOURCE_FACTOR = (1+ground)^(1/3);
+                RESOURCE_FACTOR = (1+abs(ground))^(1/3);
             end
 
             if distance == 0
@@ -286,8 +286,9 @@ classdef stationClass < handle
                     end
                 end
                 if intensities(x,y) == 0 & (ground > 0 || air > 0) && B1 == 1
-                    groundList(x,y) = groundList(x,y) - ground;
-                    airList(x,y) = airList(x,y) - air;
+                    groundList(x,y) = max(groundList(x,y) - ground,0);
+                    airList(x,y) = max(airList(x,y) - air,0);
+
 
                     groundList(station.location(1),station.location(2)) =...
                         groundList(station.location(1),station.location(2))+ground;
