@@ -55,13 +55,14 @@ classdef stationClass < handle
             %Example weights for the priority eqn (CAN CHANGE)
             if type == "AIR"
                 DISTANCE_WEIGHT = 712/15/400;
-                INTENSITY_WEIGHT = 8;
+                INTENSITY_WEIGHT = 8  ;
                 GRID_HEALTH_WEIGHT = 800;
                 POW = 3;
                 RESOURCE_FACTOR = sqrt(1+abs(air));
+                distance = 1.75*distance^(1/1.5);
             else
                 DISTANCE_WEIGHT = 1.2/200;
-                INTENSITY_WEIGHT = 10;
+                INTENSITY_WEIGHT = 10  ;
                 GRID_HEALTH_WEIGHT = 16;
                 POW = 1;
                 RESOURCE_FACTOR = (1+abs(ground))^(1/3);
@@ -130,7 +131,7 @@ classdef stationClass < handle
         function priority = selfPriority(station)
             
             %Parameter Weights
-            AIR_WEIGHT = 100;
+            AIR_WEIGHT = 50;
             GROUND_WEIGHT = 10;
             MAX_AIR = 5;
             MAX_GROUND = 20;
@@ -144,7 +145,7 @@ classdef stationClass < handle
                 AIR_WEIGHT*(MAX_AIR - station.airResources)];
 
             if station.airResources > round(MAX_AIR/2)
-                priority(2) = 200;
+                priority(2) = 100;
             end
             if station.groundResources > round(MAX_GROUND/2)
                 priority(1) = 100;
@@ -296,8 +297,7 @@ classdef stationClass < handle
                         airList(station.location(1),station.location(2))+air;
                     station.resourceTracker(ii) = [];
                     ii = ii-1;
-
-                    station.cost = station.cost + ground*3e4 + air*3e5;
+                    on.cost = station.cost + ground*3e4 + air*3e5;
                     
                 end
                 ii = ii+1;
@@ -370,11 +370,13 @@ classdef stationClass < handle
                 groundResources(x,y) = groundResources(x,y) + 1;
                 station.groundResources = station.groundResources + 1;
                 station.cost = station.cost + 20e6;
+                disp("Ground Unit Mobilized " + groundTotal)
             end
             if (airTotal > AIR_THRESHOLD) && ((station.airResources + awayAir) < MAX_AIR)
                 airResources(x,y) = airResources(x,y) + 1;
                 station.airResources = station.airResources + 1;
                 station.cost = station.cost + 20e6;
+                disp("Air Unit Mobilized" + airTotal)
             end
 
             newResources = {groundResources,airResources};
