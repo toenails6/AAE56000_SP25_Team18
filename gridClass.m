@@ -11,6 +11,9 @@ classdef gridClass < gridSettingsClass
         gridHealth; 
         airResources; 
         groundResources; 
+        tickRestorationCosts; 
+        tickCost; 
+        totalCosts; 
 
         % Subclasses: 
         fires fireClass; 
@@ -38,6 +41,9 @@ classdef gridClass < gridSettingsClass
 
             % Initialize grid health. 
             obj.gridHealth = ones(obj.gridSize); 
+
+            % Initialize total costs. 
+            obj.totalCosts = 0; 
 
             % Generate initial risk factor matrix via seeded gaussian RNG. 
             % Risk factor ranges from minimum of 0 to maximum of 1. 
@@ -98,6 +104,7 @@ classdef gridClass < gridSettingsClass
             costs = sum( ...
                 restoreAmount/obj.restoreGridHealthRate * ...
                 obj.restoreGridHealthCost, "all"); 
+            obj.tickRestorationCosts = costs; 
         end
 
         % Update tick method. 
@@ -124,11 +131,19 @@ classdef gridClass < gridSettingsClass
             % Extinguish fires. 
             obj.fires.extinguish(); 
 
+            % Calculate costs. 
+            obj.updateCost(); 
+
             % Update tick at the end of the grid update method. 
             obj.updateTick(); 
         end
+
+        % Cost estimation method. 
+        function obj = updateCost(obj)
+            obj.tickCost = sum( ...
+                obj.tickRestorationCosts + ...
+                obj.stations.totalCost, "all"); 
+            obj.totalCosts = obj.totalCosts + obj.tickCost; 
+        end
     end
 end
-
-
-
